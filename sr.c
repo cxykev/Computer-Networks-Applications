@@ -124,13 +124,14 @@ void A_input(struct pkt packet)
       new_ACKs++;
       acked[packet.acknum] = true;
     
-      /*slide the window when found the oldest unacked packet in window*/
+      /* slide the window when found the oldest unacked packet in window */
       if (packet.acknum == buffer[windowfirst].seqnum){
         /*find unacked packet and start the timer*/
         while(windowcount > 0 && acked[buffer[windowfirst].seqnum]){
           windowfirst = (windowfirst + 1) % WINDOWSIZE;
           windowcount--;
         }
+
         /* start timer again if there are still more unacked packets in window */
         stoptimer(A);
         if (windowcount > 0)
@@ -147,11 +148,10 @@ void A_input(struct pkt packet)
 /* called when A's timer goes off */
 void A_timerinterrupt(void)
 {
-
   if (TRACE > 0)
     printf("----A: time out,resend packets!\n");
   
-  /*resend the oldest unacked packet in window*/
+  /* resend the oldest unacked packet in window */
   tolayer3(A, buffer[windowfirst]);
   packets_resent++;
 
@@ -180,7 +180,7 @@ void A_init(void)
 /********* Receiver (B)  variables and procedures ************/
 
 static int expectedseqnum; /* the sequence number expected next by the receiver */
-static struct pkt repkt[SEQSPACE];  /* store the received packets */
+static struct pkt recpkt[SEQSPACE];  /* store the received packets */
 static bool received[SEQSPACE]; /* keep track for received packets */
 
 
@@ -200,7 +200,7 @@ void B_input(struct pkt packet)
     if(received[packet.seqnum] == false){
       received[packet.seqnum] = true;
       for (i = 0; i < 20; i++)
-        repkt[packet.seqnum].payload[i] = packet.payload[i];
+        recpkt[packet.seqnum].payload[i] = packet.payload[i];
     }
 
     while(received[expectedseqnum] == true){
@@ -210,8 +210,8 @@ void B_input(struct pkt packet)
     }
 
     /* send an ACK for the received packet */
-    sendpkt.acknum = expectedseqnum;
-    sendpkt.acknum = NOTINUSE;
+    sendpkt.acknum = packet.seqnum;
+    sendpkt.seqnum = NOTINUSE;
 
     /* we don't have any data to send.  fill payload with 0's */
     for ( i=0; i<20 ; i++ )
